@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SFOA 迁移项目甘特图</title>
+<style>
+/* ══════════════════════════════════════════
+   全局设置 — 修改这里调整整体外观
+══════════════════════════════════════════ */
+:root {
+  --label-width: 210px;   /* 左侧任务名列宽，可加大 */
+  --week-width:   46px;   /* 每周格子宽度 */
+  --row-height:   28px;   /* 每行高度 */
+  --header-bg:    #F8F9FA;
+  --border-light: #E5E7EB;
+  --border-mid:   #D1D5DB;
+  --border-dark:  #9CA3AF;
+  --text-primary: #111827;
+  --text-muted:   #6B7280;
+  --text-tiny:    #9CA3AF;
+  --stripe-bg:    rgba(0,0,0,.025);
+  --ms-week-bg:   rgba(180,83,9,.07);
+
+  /* ── 泳道颜色 — 修改这里换颜色 ── */
+  --c-process: #c2185b;   /* 流程梳理 */
+  --c-cpq:     #e64a19;   /* CPQ 退役 */
+  --c-migrate: #1565c0;   /* SFOA 迁移 */
+  --c-sync:    #00695c;   /* 数据同步 */
+  --c-crm:     #4527a0;   /* CRM 优化 */
+  --c-qa:      #2e7d32;   /* 测试/UAT */
+  --c-pm:      #424242;   /* 项目管理 */
+  --c-milestone:#b45309;  /* 里程碑钻石 */
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+  font-size: 13px;
+  color: var(--text-primary);
+  background: #fff;
+  padding: 16px 12px 24px;
+}
+
+h1 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+.subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+}
+
+/* ══ 滚动容器 ══ */
+#wrap {
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--border-mid);
+  border-radius: 8px;
+}
+
+/* ══ 表格 ══ */
+table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  min-width: calc(var(--label-width) + 20 * var(--week-width));
+  width: 100%;
+}
+col.c-label { width: var(--label-width); }
+col.c-week  { width: var(--week-width);  }
+
+/* ══ 表头 ══ */
+thead th {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  background: var(--header-bg);
+}
+.th-corner {
+  left: 0;
+  z-index: 20 !important;
+  border-right: 1.5px solid var(--border-dark);
+  border-bottom: 2px solid var(--border-dark);
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: left;
+  vertical-align: middle;
+}
+.th-month {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-light);
+  border-right: 1px solid var(--border-light);
+  padding: 6px 0 3px;
+}
+.th-week {
+  text-align: center;
+  font-size: 10px;
+  color: var(--text-tiny);
+  line-height: 1.35;
+  border-bottom: 2px solid var(--border-dark);
+  border-right: 1px solid var(--border-light);
+  padding: 3px 0 5px;
+}
+.th-week.has-ms { color: var(--c-milestone); font-weight: 600; }
+
+/* ══ 单元格 ══ */
+.td-label {
+  position: sticky;
+  left: 0;
+  z-index: 8;
+  background: #fff;
+  border-right: 1.5px solid var(--border-dark);
+  height: var(--row-height);
+  padding: 0 6px 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  vertical-align: middle;
+  max-width: var(--label-width);
+}
+.td-label.group {
+  background: var(--header-bg);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  padding-left: 9px;
+}
+.td-label.task {
+  padding-left: 22px;
+  font-size: 11px;
+}
+.td-cell {
+  height: var(--row-height);
+  border-right: 1px solid var(--border-light);
+  padding: 5px 2px;
+  vertical-align: middle;
+}
+.td-cell.stripe  { background: var(--stripe-bg); }
+.td-cell.ms-col  { background: var(--ms-week-bg); }
+
+/* ══ 泳道分隔 ══ */
+tr.group-row .td-label,
+tr.group-row .td-cell { border-top: 2px solid var(--border-dark); }
+tr.task-row .td-label,
+tr.task-row .td-cell  { border-top: 1px solid var(--border-light); }
+
+/* ══ 任务条 ══ */
+.bar {
+  height: 17px;
+  border-radius: 3px;
+  opacity: .90;
+  display: block;
+}
+
+/* ══ 里程碑钻石 ══ */
+.diamond {
+  width: 13px;
+  height: 13px;
+  border-radius: 2px;
+  transform: rotate(45deg);
+  background: var(--c-milestone);
+  display: block;
+  margin: 0 auto;
+}
+
+/* ══ 图例 ══ */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-top: 12px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+.leg-item { display: flex; align-items: center; gap: 5px; }
+.leg-sq   { width:11px; height:11px; border-radius:2px; display:inline-block; flex-shrink:0; }
+.leg-dia  { width:10px; height:10px; border-radius:2px; transform:rotate(45deg);
+            background:var(--c-milestone); display:inline-block; flex-shrink:0; }
+
+/* ══ 飞书嵌入提示（可删除） ══ */
+.feishu-tip {
+  margin-top: 18px;
+  padding: 10px 14px;
+  background: #EFF6FF;
+  border-left: 3px solid #3B82F6;
+  border-radius: 0 6px 6px 0;
+  font-size: 11.5px;
+  color: #1e40af;
+  line-height: 1.6;
+}
+</style>
+</head>
+<body>
+
+<h1>SFOA 迁移项目甘特图</h1>
+<p class="subtitle">项目周期：2026年4月1日 — 2026年8月23日（共 20 周）&nbsp;｜&nbsp;7 条工作流 · 44 个子任务 · 6 个关键里程碑</p>
+
+<div id="wrap">
+  <table id="gt">
+    <colgroup id="cg"></colgroup>
+    <thead id="th"></thead>
+    <tbody id="tb"></tbody>
+  </table>
+</div>
+
+<div class="legend" id="leg"></div>
+
+<!--
+  ╔══════════════════════════════════════════════════╗
+  ║   可编辑数据区 — 修改下方 DATA 对象即可更新图表   ║
+  ╚══════════════════════════════════════════════════╝
+-->
+<script>
+/* ─────────────────────────────────────────────────────
+   1. 项目基本参数
+   ───────────────────────────────────────────────────── */
+const CONFIG = {
+  startDate: new Date(2026, 3, 1),   // 月份从0计数，3=4月
+  totalWeeks: 20,
+  title: 'SFOA 迁移项目甘特图',
+};
+
+/* ─────────────────────────────────────────────────────
+   2. 泳道定义（顺序即显示顺序）
+   ───────────────────────────────────────────────────── */
+const LANES = [
+  { id: 'process', label: '流程梳理（新增）',  cssVar: '--c-process' },
+  { id: 'cpq',     label: '模块A  CPQ 退役',  cssVar: '--c-cpq'     },
+  { id: 'migrate', label: '模块B  SFOA 迁移', cssVar: '--c-migrate' },
+  { id: 'sync',    label: '模块C  数据同步',  cssVar: '--c-sync'    },
+  { id: 'crm',     label: '模块D  CRM 优化',  cssVar: '--c-crm'     },
+  { id: 'qa',      label: '测试 / UAT',        cssVar: '--c-qa'      },
+  { id: 'pm',      label: '项目管理',          cssVar: '--c-pm'      },
+];
+
+/* ─────────────────────────────────────────────────────
+   3. 任务数据
+   字段说明：
+     l  = 泳道 id（对应 LANES[x].id）
+     n  = 任务名称
+     s  = 开始周（1-based）
+     e  = 结束周（含）
+     ms = 里程碑标签（字符串）或不填
+   ───────────────────────────────────────────────────── */
+const TASKS = [
+  /* ── 流程梳理 ── */
+  { l:'process', n:'业务现状访谈（销售 / IT / 业务方）',         s:1,  e:2  },
+  { l:'process', n:'AS-IS 流程图绘制',                           s:2,  e:3  },
+  { l:'process', n:'TO-BE 流程差异分析',                         s:3,  e:4  },
+  { l:'process', n:'流程评审确认（甲乙双方签字锁定）',           s:4,  e:4,  ms:'W4 流程评审' },
+
+  /* ── CPQ 退役 ── */
+  { l:'cpq',     n:'CPQ 功能与配置全量盘点',                     s:1,  e:2  },
+  { l:'cpq',     n:'报价单 / 配置清单核心功能保留验证',           s:2,  e:3  },
+  { l:'cpq',     n:'冗余功能入口隐藏（停用不删除，观察 30 天）', s:3,  e:4  },
+  { l:'cpq',     n:'历史 CPQ 数据 CSV 导出归档（甲方签字）',     s:4,  e:5  },
+  { l:'cpq',     n:'CPQ 退役验收完成',                           s:5,  e:5,  ms:'W5 CPQ 退役' },
+
+  /* ── SFOA 迁移 ── */
+  { l:'migrate', n:'Org Diff 全量扫描（字段 / 配置 / 行为）',    s:2,  e:3  },
+  { l:'migrate', n:'差异清单整理 & 甲乙双方确认签字',            s:3,  e:4  },
+  { l:'migrate', n:'元数据结构迁移（对象 / 字段 / 布局）',       s:4,  e:7  },
+  { l:'migrate', n:'审批流 & Flow & 验证规则迁移',               s:6,  e:9  },
+  { l:'migrate', n:'Permission Set & Profile 权限重建',          s:7,  e:9  },
+  { l:'migrate', n:'历史数据迁移 Account / Contact（分批）',     s:9,  e:12 },
+  { l:'migrate', n:'历史数据迁移 Opportunity / Order（分批）',   s:11, e:14 },
+  { l:'migrate', n:'数据迁移完整率验收 ≥ 99.9%',                s:14, e:14, ms:'W14 迁移验收' },
+
+  /* ── 数据同步 ── */
+  { l:'sync',    n:'SFOA Connected App & OAuth 配置',            s:3,  e:4  },
+  { l:'sync',    n:'阿里云 ECS 部署 & Spring Boot 基础框架',     s:4,  e:6  },
+  { l:'sync',    n:'RocketMQ 接入 & 事务消息验证',               s:5,  e:7  },
+  { l:'sync',    n:'Platform Event 监听 & Replay ID 持久化',     s:6,  e:8  },
+  { l:'sync',    n:'数据路由模块（Data_Region__c 阶段一）',      s:7,  e:9  },
+  { l:'sync',    n:'冲突仲裁 & Sync_Version__c 版本号机制',      s:9,  e:11 },
+  { l:'sync',    n:'PIPL 过滤 & SHA-256 脱敏模块',               s:10, e:12 },
+  { l:'sync',    n:'影子审批流（跨 Org 审批回写）',              s:11, e:13 },
+  { l:'sync',    n:'对账机器人（Row Count + 字段 + 关联三层）',  s:13, e:15 },
+  { l:'sync',    n:'监控看板 & 分级告警配置',                    s:14, e:16 },
+  { l:'sync',    n:'用户路由阶段二预埋接口',                     s:15, e:17 },
+  { l:'sync',    n:'同步架构联调验收',                           s:16, e:16, ms:'W16 联调完成' },
+
+  /* ── CRM 优化 ── */
+  { l:'crm',     n:'Trigger Handler / Dispatcher 框架重构',      s:4,  e:7  },
+  { l:'crm',     n:'SOQL 循环外移 & 101 超限修复',               s:6,  e:9  },
+  { l:'crm',     n:'冗余对象识别 & 归档确认',                    s:8,  e:10 },
+  { l:'crm',     n:'自定义报表 & 看板性能优化',                  s:9,  e:12 },
+  { l:'crm',     n:'企微 / 钉钉集成适配',                        s:12, e:15 },
+
+  /* ── 测试 / UAT ── */
+  { l:'qa',      n:'沙盒冒烟测试（随迁移各阶段持续执行）',       s:5,  e:14 },
+  { l:'qa',      n:'中间件集成回归测试',                          s:12, e:16 },
+  { l:'qa',      n:'全量 UAT（逐业务场景验收）',                  s:15, e:17 },
+  { l:'qa',      n:'用户培训（销售 / IT 分批）',                  s:16, e:18 },
+  { l:'qa',      n:'UAT 通过签字确认',                            s:17, e:17, ms:'W17 UAT 通过' },
+  { l:'qa',      n:'切换演练 & 回滚预案验证',                     s:18, e:18 },
+
+  /* ── 项目管理 ── */
+  { l:'pm',      n:'项目启动会 & 三项关键确认',                   s:1,  e:1,  ms:'W1 启动会' },
+  { l:'pm',      n:'PIPL 法务评审 & 字段清单锁定',                s:1,  e:2  },
+  { l:'pm',      n:'网络专线申请 & ECS IP 白名单配置',            s:1,  e:3  },
+  { l:'pm',      n:'每周例会 & 风险日志（全程）',                 s:1,  e:19 },
+  { l:'pm',      n:'阶段里程碑评审',                              s:5,  e:17 },
+  { l:'pm',      n:'灰度切换上线（分批灰度，5 分钟回滚预案）',    s:19, e:19, ms:'W19 切换上线' },
+  { l:'pm',      n:'上线后 30 天稳定保障',                        s:19, e:20 },
+];
+
+/* ══════════════════════════════════════════
+   以下为渲染逻辑，一般不需要修改
+══════════════════════════════════════════ */
+const root = document.documentElement;
+const getColor = id => getComputedStyle(root).getPropertyValue(
+  LANES.find(l => l.id === id)?.cssVar || '--c-pm'
+).trim();
+
+const addDays = (d, n) => { const r = new Date(d); r.setDate(r.getDate() + n); return r; };
+const fmtMD   = d => `${d.getMonth()+1}/${d.getDate()}`;
+const wkDates = Array.from({length: CONFIG.totalWeeks}, (_, i) => addDays(CONFIG.startDate, i * 7));
+
+const msWeeks = new Set(TASKS.filter(t => t.ms).map(t => t.s));
+
+// colgroup
+const cg = document.getElementById('cg');
+const lc = document.createElement('col'); lc.className = 'c-label'; cg.appendChild(lc);
+for (let i = 0; i < CONFIG.totalWeeks; i++) {
+  const c = document.createElement('col'); c.className = 'c-week'; cg.appendChild(c);
+}
+
+// thead
+const thead = document.getElementById('th');
+const r0 = thead.insertRow();
+
+const corn = document.createElement('th');
+corn.className = 'th-corner'; corn.rowSpan = 2; corn.textContent = '任务';
+r0.appendChild(corn);
+
+// month headers
+const months = []; let cm = null, cspan = 0;
+wkDates.forEach(d => {
+  const m = d.toLocaleDateString('zh-CN', {month: 'short'});
+  if (m !== cm) { if (cm) months.push({label: cm, span: cspan}); cm = m; cspan = 1; } else cspan++;
+});
+if (cm) months.push({label: cm, span: cspan});
+months.forEach(m => {
+  const th = document.createElement('th');
+  th.className = 'th-month'; th.colSpan = m.span; th.textContent = m.label;
+  r0.appendChild(th);
+});
+
+const r1 = thead.insertRow();
+wkDates.forEach((d, i) => {
+  const th = document.createElement('th');
+  th.className = 'th-week' + (msWeeks.has(i+1) ? ' has-ms' : '');
+  th.innerHTML = `<div>W${i+1}</div><div style="font-size:9px;opacity:.8">${fmtMD(d)}</div>`;
+  r1.appendChild(th);
+});
+
+// tbody
+const tb = document.getElementById('tb');
+const laneMap = {};
+LANES.forEach(l => { laneMap[l.id] = TASKS.filter(t => t.l === l.id); });
+
+LANES.forEach(lane => {
+  const color = getColor(lane.id);
+
+  // group row
+  const gr = tb.insertRow(); gr.className = 'group-row';
+  const gLbl = gr.insertCell(); gLbl.className = 'td-label group';
+  gLbl.innerHTML = `<div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:2px;background:${color};flex-shrink:0;display:inline-block"></span>${lane.label}</div>`;
+  for (let w = 0; w < CONFIG.totalWeeks; w++) {
+    const td = gr.insertCell();
+    td.className = 'td-cell' + (w%2 ? ' stripe' : '') + (msWeeks.has(w+1) ? ' ms-col' : '');
+  }
+
+  // task rows
+  laneMap[lane.id].forEach(task => {
+    const tr = tb.insertRow(); tr.className = 'task-row';
+    const tl = tr.insertCell(); tl.className = 'td-label task';
+    tl.title = task.n; tl.textContent = task.n;
+
+    for (let w = 0; w < CONFIG.totalWeeks; w++) {
+      const wn = w + 1;
+      const td = tr.insertCell();
+      td.className = 'td-cell' + (w%2 ? ' stripe' : '') + (msWeeks.has(wn) ? ' ms-col' : '');
+
+      if (task.ms && task.s === wn) {
+        const d = document.createElement('div'); d.className = 'diamond'; td.appendChild(d);
+      } else if (!task.ms && wn >= task.s && wn <= task.e) {
+        const isF = wn === task.s, isL = wn === task.e;
+        const bar = document.createElement('div'); bar.className = 'bar';
+        bar.style.background = color;
+        bar.style.borderRadius = `${isF?'3px':'0'} ${isL?'3px':'0'} ${isL?'3px':'0'} ${isF?'3px':'0'}`;
+        bar.style.marginLeft   = isF ? '2px' : '0';
+        bar.style.marginRight  = isL ? '2px' : '0';
+        bar.style.width = `calc(100% - ${isF?2:0}px - ${isL?2:0}px)`;
+        td.appendChild(bar);
+      }
+    }
+  });
+});
+
+// legend
+const legEl = document.getElementById('leg');
+LANES.forEach(l => {
+  const el = document.createElement('div'); el.className = 'leg-item';
+  el.innerHTML = `<span class="leg-sq" style="background:${getColor(l.id)}"></span><span>${l.label}</span>`;
+  legEl.appendChild(el);
+});
+const mel = document.createElement('div'); mel.className = 'leg-item';
+mel.innerHTML = `<span class="leg-dia"></span><span>里程碑</span>`;
+legEl.appendChild(mel);
+</script>
+
+<div class="feishu-tip">
+  <strong>飞书嵌入说明（可删除此段）</strong><br>
+  方法一：将此文件上传至阿里云 OSS / GitHub Pages 等静态托管，获取公开链接后在飞书文档中插入「网页」模块粘贴链接即可。<br>
+  方法二：飞书文档 → 插入 → 「网页」→ 选择「嵌入代码」，将此文件全部 HTML 内容粘贴后确认。<br>
+  <strong>如何修改任务：</strong>找到 <code>TASKS</code> 数组，每行一个任务对象；<code>s</code>=开始周，<code>e</code>=结束周（均含），<code>ms</code>=里程碑标签。颜色在顶部 <code>:root</code> 变量里调整。
+</div>
+
+</body>
+</html>
