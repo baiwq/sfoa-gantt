@@ -238,8 +238,7 @@ const LANES = [
   { id: 'process', label: '流程梳理（新增）',  cssVar: '--c-process' },
   { id: 'cpq',     label: '模块A  CPQ 退役',  cssVar: '--c-cpq'     },
   { id: 'migrate', label: '模块B  SFOA 迁移', cssVar: '--c-migrate' },
-  { id: 'sync',    label: '模块C  数据同步',  cssVar: '--c-sync'    },
-  { id: 'crm',     label: '模块D  CRM 优化',  cssVar: '--c-crm'     },
+  { id: 'crm',     label: '模块C  CRM 优化',  cssVar: '--c-crm'     },
   { id: 'qa',      label: '测试 / UAT',        cssVar: '--c-qa'      },
   { id: 'pm',      label: '项目管理',          cssVar: '--c-pm'      },
 ];
@@ -276,20 +275,6 @@ const TASKS = [
   { l:'migrate', n:'历史数据迁移 Account / Contact（分批）',     s:9,  e:12 },
   { l:'migrate', n:'历史数据迁移 Opportunity / Order（分批）',   s:11, e:14 },
   { l:'migrate', n:'数据迁移完整率验收 ≥ 99.9%',                s:14, e:14, ms:'W14 迁移验收' },
-
-  /* ── 数据同步 ── */
-  { l:'sync',    n:'SFOA Connected App & OAuth 配置',            s:3,  e:4  },
-  { l:'sync',    n:'阿里云 ECS 部署 & Spring Boot 基础框架',     s:4,  e:6  },
-  { l:'sync',    n:'RocketMQ 接入 & 事务消息验证',               s:5,  e:7  },
-  { l:'sync',    n:'Platform Event 监听 & Replay ID 持久化',     s:6,  e:8  },
-  { l:'sync',    n:'数据路由模块（Data_Region__c 阶段一）',      s:7,  e:9  },
-  { l:'sync',    n:'冲突仲裁 & Sync_Version__c 版本号机制',      s:9,  e:11 },
-  { l:'sync',    n:'PIPL 过滤 & SHA-256 脱敏模块',               s:10, e:12 },
-  { l:'sync',    n:'影子审批流（跨 Org 审批回写）',              s:11, e:13 },
-  { l:'sync',    n:'对账机器人（Row Count + 字段 + 关联三层）',  s:13, e:15 },
-  { l:'sync',    n:'监控看板 & 分级告警配置',                    s:14, e:16 },
-  { l:'sync',    n:'用户路由阶段二预埋接口',                     s:15, e:17 },
-  { l:'sync',    n:'同步架构联调验收',                           s:16, e:16, ms:'W16 联调完成' },
 
   /* ── CRM 优化 ── */
   { l:'crm',     n:'Trigger Handler / Dispatcher 框架重构',      s:4,  e:7  },
